@@ -1,0 +1,5 @@
+opencv-python>=4.9
+numpy>=1.26
+mss>=9.0
+pywin32>=306
+pydirectinput>=1.0.4

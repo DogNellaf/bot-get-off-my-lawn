@@ -322,6 +322,12 @@ __pycache__/
 *.odx.cs
 *.xsd.cs
 
+# GetOffMyLawnBot (Python)
+config.json
+calibration/
+.venv/
+venv/
+
 # OpenCover UI analysis results
 OpenCover/
 
