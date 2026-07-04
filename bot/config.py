@@ -24,9 +24,11 @@ class Config:
         default_factory=lambda: [[770, 200], [1225, 200], [1550, 690], [355, 690]]
     )
 
-    # Aliens' blue body color in HSV (measured from real frames: H 109-117,
+    # Aliens' blue body color in HSV (measured from real frames: H 108-117,
     # S 124-225, V up to 240; grass is H~23, bricks H~14, sky is desaturated).
-    alien_hsv_lower: List[int] = field(default_factory=lambda: [95, 80, 100])
+    # The lower H bound sits at 105 to exclude the cyan jetpack exhaust trail
+    # (H 95-102), which otherwise registers as a phantom alien one lane over.
+    alien_hsv_lower: List[int] = field(default_factory=lambda: [105, 80, 100])
     alien_hsv_upper: List[int] = field(default_factory=lambda: [130, 255, 255])
     min_blob_area: int = 300
 

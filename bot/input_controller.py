@@ -29,6 +29,15 @@ class InputController:
         """Assumes the character starts centered; call after a restart."""
         self.current_lane = self.lane_count // 2
 
+    def hard_resync(self) -> None:
+        """Walks all the way left (extra presses past the edge do nothing) so
+        the lane counter is guaranteed to match reality again. Needed after
+        any in-game mouse click: a click can move Murray and desync the
+        counter."""
+        for _ in range(self.lane_count + 1):
+            self.tap(self.move_left_key)
+        self.current_lane = 0
+
     def move_to_lane(self, target_lane: int, fire_between_steps: bool = False) -> None:
         target_lane = max(0, min(self.lane_count - 1, target_lane))
         while self.current_lane != target_lane:

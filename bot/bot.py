@@ -81,6 +81,8 @@ class LawnBot:
             write_line("Игра на паузе — кликаю, чтобы продолжить.", MessageType.WARNING)
             self.input.click(*self._client_to_screen(*self.pause.click_point()))
             time.sleep(0.7)
+            # A click inside the game can move Murray — restore a known lane.
+            self.input.hard_resync()
             return
 
         restart_button = self.game_over.find_restart_button(frame)
@@ -98,7 +100,10 @@ class LawnBot:
             sx, sy = self._client_to_screen(*restart_button)
             self.input.click(sx, sy)
             time.sleep(self.config.restart_wait)
-            self.input.reset_position()
+            # The lawn is empty at run start — a free moment to establish an
+            # exact position instead of trusting the spawn point.
+            self.input.hard_resync()
+            self.input.move_to_lane(self.input.lane_count // 2)
             return
 
         aliens = self.vision.detect(frame)
@@ -200,6 +205,8 @@ class LawnBot:
         write_line(
             f"Не успеваю к дорожке {critical[0]} — применяю спецспособность #{self._powerup_index}"
         )
+        # A click inside the game can move Murray — restore a known lane.
+        self.input.hard_resync()
 
     def _pick_target_lane(self, aliens: list[Alien]) -> int | None:
         """Chooses which lane to shoot based on decayed per-lane threat.
@@ -284,9 +291,7 @@ class LawnBot:
         self._idle_steps += 1
         if self._idle_steps != 10:
             return
-        for _ in range(self.input.lane_count - 1):
-            self.input.tap(self.input.move_left_key, duration=0.03)
-        self.input.current_lane = 0
+        self.input.hard_resync()
         self.input.move_to_lane(self.input.lane_count // 2)
         self._last_target_lane = None
         if self.debug:
@@ -313,6 +318,8 @@ class LawnBot:
         self.input.click(cx, cy)
         write_line("Кликнул по центру окна игры, чтобы снять паузу.")
         time.sleep(0.5)
+        self.input.hard_resync()
+        self.input.move_to_lane(self.input.lane_count // 2)
 
         try:
             while True:

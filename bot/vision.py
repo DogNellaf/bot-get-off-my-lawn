@@ -52,6 +52,12 @@ class FieldGeometry:
         frac = (x - left) / max(1.0, right - left)
         return min(self.lane_count - 1, max(0, int(frac * self.lane_count)))
 
+    def lane_width_at(self, y: float) -> float:
+        t = min(1.0, max(0.0, self.progress(y)))
+        left = self.tlx + (self.blx - self.tlx) * t
+        right = self.trx + (self.brx - self.trx) * t
+        return (right - left) / self.lane_count
+
     def lane_center_at(self, lane: int, t: float) -> Tuple[int, int]:
         """Client-area point at the center of `lane` at progress t (0=back, 1=front)."""
         left = self.tlx + (self.blx - self.tlx) * t
@@ -102,19 +108,24 @@ class AlienVision:
             bottom_y = int(stats[i, cv2.CC_STAT_TOP] + stats[i, cv2.CC_STAT_HEIGHT])
             if not self.geometry.contains(cx, bottom_y):
                 continue
-            # The lanes the blob's footprint covers: single for a walker,
-            # several for wide targets like the alien car. Insetting by a
-            # quarter-width avoids counting a lane grazed by an arm.
+            # A regular walker belongs to exactly one lane (its centroid's) —
+            # even when its body grazes a boundary line. Only genuinely wide
+            # targets like the alien car (1.4+ lane widths) spread their
+            # threat over the lanes they cover.
             left = int(stats[i, cv2.CC_STAT_LEFT])
             width = int(stats[i, cv2.CC_STAT_WIDTH])
-            lane_lo = self.geometry.lane_of(left + width * 0.25, bottom_y)
-            lane_hi = self.geometry.lane_of(left + width * 0.75, bottom_y)
+            lane = self.geometry.lane_of(cx, bottom_y)
+            if width >= 1.4 * self.geometry.lane_width_at(bottom_y):
+                lane_lo = self.geometry.lane_of(left + width * 0.25, bottom_y)
+                lane_hi = self.geometry.lane_of(left + width * 0.75, bottom_y)
+            else:
+                lane_lo = lane_hi = lane
             aliens.append(
                 Alien(
                     x=int(cx),
                     y=bottom_y,
                     area=area,
-                    lane=self.geometry.lane_of(cx, bottom_y),
+                    lane=lane,
                     progress=self.geometry.progress(bottom_y),
                     lane_span=(lane_lo, lane_hi),
                 )
