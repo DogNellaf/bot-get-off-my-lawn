@@ -16,13 +16,15 @@ class InputController:
         move_left_key: str,
         move_right_key: str,
         fire_key: str,
-        key_press_duration: float = 0.05,
+        key_press_duration: float = 0.025,
+        post_key_pause: float = 0.004,
     ):
         self.lane_count = lane_count
         self.move_left_key = move_left_key
         self.move_right_key = move_right_key
         self.fire_key = fire_key
         self.key_press_duration = key_press_duration
+        self.post_key_pause = post_key_pause
         self.current_lane = lane_count // 2
 
     def reset_position(self) -> None:
@@ -44,8 +46,8 @@ class InputController:
             key = self.move_right_key if target_lane > self.current_lane else self.move_left_key
             self.tap(key)
             self.current_lane += 1 if target_lane > self.current_lane else -1
-            # A shot on every lane crossed costs nothing and clips aliens we
-            # pass over on the way to the main target.
+            # A shot on every lane crossed clips aliens we pass over, but it
+            # also slows the trip to the real target — only do it when asked.
             if fire_between_steps and self.current_lane != target_lane:
                 self.fire()
 
@@ -56,7 +58,7 @@ class InputController:
         pydirectinput.keyDown(key)
         time.sleep(duration if duration is not None else self.key_press_duration)
         pydirectinput.keyUp(key)
-        time.sleep(0.01)
+        time.sleep(self.post_key_pause)
 
     def click(self, x: int, y: int) -> None:
         pydirectinput.moveTo(x, y)

@@ -192,9 +192,9 @@ class PauseDetector:
         return x + w // 2, y + h // 2
 
 
-class GameOverDetector:
-    """Finds the restart button ('Play Again') via template matching and
-    reports where it is, so the bot can click it."""
+class TemplateButton:
+    """Finds a UI button via grayscale template matching and reports its
+    center in client-area coordinates, so the bot can click it."""
 
     def __init__(self, template_path: Path, match_threshold: float = 0.8):
         self.template_path = template_path
@@ -207,8 +207,7 @@ class GameOverDetector:
     def is_calibrated(self) -> bool:
         return self.template is not None
 
-    def find_restart_button(self, frame: np.ndarray) -> Optional[Tuple[int, int]]:
-        """Returns the button center in client-area coordinates, or None."""
+    def find(self, frame: np.ndarray) -> Optional[Tuple[int, int]]:
         if self.template is None:
             return None
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -220,3 +219,10 @@ class GameOverDetector:
         if max_val < self.match_threshold:
             return None
         return max_loc[0] + tw // 2, max_loc[1] + th // 2
+
+
+class GameOverDetector(TemplateButton):
+    """Finds the restart button ('Play Again') on the results screen."""
+
+    def find_restart_button(self, frame: np.ndarray) -> Optional[Tuple[int, int]]:
+        return self.find(frame)

@@ -41,19 +41,22 @@ class Config:
     move_right_key: str = "d"
     fire_key: str = "space"
 
-    # Emergency power-ups: client-area coords of the HUD buttons (Soundwave
-    # ear, Cane Time clock, Infuriate heart) clicked when an alien is about to
-    # reach the fence and Murray can't get there in time.
+    # Emergency power-ups are disabled: they cost limited charges and, being
+    # mouse clicks, also nudge Murray and desync his lane. Rely on the musket.
+    powerup_enabled: bool = False
     powerup_points: List[List[int]] = field(
         default_factory=lambda: [[1596, 998], [1737, 1000], [1857, 1005]]
     )
     powerup_threshold: float = 0.82
     powerup_cooldown: float = 12.0
 
-    step_cooldown: float = 0.03
+    step_cooldown: float = 0.0
     restart_wait: float = 3.0
 
     gameover_template: str = "calibration/gameover.png"
+    # 'Нет' button of the "spend 1000 balls to continue" dialog shown on death:
+    # decline it (not worth the balls) so the run ends and restarts cleanly.
+    continue_no_template: str = "calibration/continue_no.png"
 
     # Shop flow (all points are client-area coords on 1920x1080).
     shop_enabled: bool = True

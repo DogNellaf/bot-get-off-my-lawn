@@ -8,7 +8,15 @@ import cv2
 from bot.config import Config
 from bot.input_controller import InputController
 from bot.logger import MessageType, write_line
-from bot.vision import Alien, AlienVision, FieldGeometry, GameOverDetector, PauseDetector, annotate
+from bot.vision import (
+    Alien,
+    AlienVision,
+    FieldGeometry,
+    GameOverDetector,
+    PauseDetector,
+    TemplateButton,
+    annotate,
+)
 from bot.window import GameWindow
 
 INCIDENT_DIR = Path("calibration/incidents")
@@ -38,6 +46,7 @@ class LawnBot:
             min_blob_area=config.min_blob_area,
         )
         self.game_over = GameOverDetector(Path(config.gameover_template))
+        self.continue_no = TemplateButton(Path(config.continue_no_template))
         self.pause = PauseDetector()
         self.runs_completed = 0
         self._last_target_lane: int | None = None
@@ -85,6 +94,16 @@ class LawnBot:
             self.input.hard_resync()
             return
 
+        # On death the game offers to spend 1000 balls to continue the same
+        # run — decline it (not worth the balls) so we go straight to the
+        # results screen and a clean restart.
+        continue_no_button = self.continue_no.find(frame)
+        if continue_no_button is not None:
+            write_line("Диалог продолжения — жму 'Нет' (не тратим шары).", MessageType.WARNING)
+            self.input.click(*self._client_to_screen(*continue_no_button))
+            time.sleep(1.0)
+            return
+
         restart_button = self.game_over.find_restart_button(frame)
         if restart_button is not None:
             self.runs_completed += 1
@@ -120,8 +139,11 @@ class LawnBot:
         else:
             if target_lane is not None:
                 self._idle_steps = 0
-                self._maybe_use_powerup()
-                self.input.move_to_lane(target_lane, fire_between_steps=True)
+                if self.config.powerup_enabled:
+                    self._maybe_use_powerup()
+                # Don't fire on lanes crossed en route — get to the actual
+                # target and open fire there as fast as possible.
+                self.input.move_to_lane(target_lane, fire_between_steps=False)
                 self._last_target_lane = target_lane
             else:
                 self._last_target_lane = None
